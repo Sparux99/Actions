@@ -2,8 +2,8 @@ name: Build Cordova Android
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  workflow_dispatch: {}
 
 jobs:
   build:
@@ -13,37 +13,68 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+          cache: 'npm'
 
-      - name: Install Java JDK 11
+      - name: Setup Java 17 (Temurin)
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
           distribution: 'temurin'
+          java-version: '17'
 
-      - name: Install Cordova
-        run: npm install -g cordova
+      - name: Install helper packages
+        run: sudo apt-get update && sudo apt-get install -y wget unzip
 
-      - name: Install Android SDK
+      - name: Install Android command-line tools & SDK packages
         run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          unzip commandlinetools-linux-9477386_latest.zip -d $HOME/android-sdk/cmdline-tools
-          yes | $HOME/android-sdk/cmdline-tools/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/android-sdk --licenses
-          $HOME/android-sdk/cmdline-tools/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/android-sdk "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          # install commandline tools into $HOME/android-sdk
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O /tmp/cmdline-tools.zip
+          unzip -q /tmp/cmdline-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools
+          # normalize path to 'latest'
+          mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest || true
+          export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin
+          # accept licenses and install basic packages (adjust API / build-tools if needed)
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
+          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-35" "build-tools;35.0.0" "platforms;android-33" "build-tools;33.0.2"
 
-      - name: Build APK
+      - name: Expose Android SDK to PATH and env
         run: |
-          cordova platform add android
-          cordova build android --release
+          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
+          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+
+      - name: Install project dependencies & Cordova
+        run: |
+          # install project deps (safe if package.json exists)
+          if [ -f package-lock.json ] || [ -f package.json ]; then
+            npm install
+          fi
+          npm install -g cordova
+
+      - name: Prepare Cordova Android platform
+        run: |
+          cordova telemetry off || true
+          # remove old android platform (if present) and add fresh one
+          cordova platform rm android || true
+          cordova platform add android@latest --save
+
+      - name: Build Android (release)
+        run: |
+          cordova build android --release --no-telemetry
+
+      - name: Show APK path (debug)
+        run: |
+          echo "Listing possible APK output(s):"
+          ls -la platforms/android/app/build/outputs/apk/release || true
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MyWeatherApp
-          path: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
+          name: MyWeatherApp-apk
+          path: platforms/android/app/build/outputs/apk/release/*.apk
