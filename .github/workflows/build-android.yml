@@ -1,4 +1,4 @@
-name: Build Cordova Android
+name: Build Cordova Android and Convert AAB to Signed APK
 
 on:
   push:
@@ -10,29 +10,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. جلب الكود من المستودع
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. إعداد Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
 
-      # 3. إعداد Java 17 (Temurin)
       - name: Setup Java 17 (Temurin)
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 4. تثبيت الحزم المساعدة
       - name: Install helper packages
         run: sudo apt-get update && sudo apt-get install -y wget unzip
 
-      # 5. تثبيت أدوات الأندرويد و SDK
       - name: Install Android command-line tools & SDK packages
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
@@ -49,7 +44,6 @@ jobs:
             "platforms;android-33" \
             "build-tools;33.0.2"
 
-      # 6. إضافة SDK إلى PATH
       - name: Expose Android SDK to PATH and env
         run: |
           echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
@@ -57,7 +51,6 @@ jobs:
           echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
           echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
 
-      # 7. تثبيت Cordova واعتماديات المشروع
       - name: Install project dependencies & Cordova
         run: |
           if [ -f package-lock.json ] || [ -f package.json ]; then
@@ -65,28 +58,40 @@ jobs:
           fi
           npm install -g cordova
 
-      # 8. إعداد منصة Android
       - name: Prepare Cordova Android platform
         run: |
           cordova telemetry off || true
           cordova platform rm android || true
           cordova platform add android@latest --save
 
-      # 9. بناء APK و AAB معًا
-      - name: Build Android (APK & AAB)
+      - name: Build Android AAB (release)
         run: |
-          cordova build android --release --no-telemetry --packageType=apk
           cordova build android --release --no-telemetry --packageType=bundle
 
-      # 10. عرض جميع الملفات المخرجة (للتأكد)
-      - name: Check all outputs
-        run: find platforms/android/app/build/outputs -type f
+      - name: Decode and save keystore from Secrets
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+        shell: bash
 
-      # 11. رفع APK و AAB كـ artifacts
-      - name: Upload APK & AAB artifacts
+      - name: Download bundletool
+        run: |
+          wget -q https://github.com/google/bundletool/releases/download/1.18.1/bundletool-all-1.18.1.jar -O bundletool.jar
+
+      - name: Convert AAB to Signed APK
+        run: |
+          java -jar bundletool.jar build-apks \
+            --bundle=platforms/android/app/build/outputs/bundle/release/app-release.aab \
+            --output=app-release.apks \
+            --mode=universal \
+            --ks=release.keystore \
+            --ks-key-alias=${{ secrets.KEY_ALIAS }} \
+            --ks-pass=pass:${{ secrets.STORE_PASSWORD }} \
+            --key-pass=pass:${{ secrets.KEY_PASSWORD }}
+
+          unzip -p app-release.apks '*.apk' > universal-signed.apk
+
+      - name: Upload signed APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MyWeatherApp-builds
-          path: |
-            platforms/android/app/build/outputs/apk/release/*.apk
-            platforms/android/app/build/outputs/bundle/release/*.aab
+          name: MyWeatherApp-signed-apk
+          path: universal-signed.apk
