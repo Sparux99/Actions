@@ -64,10 +64,13 @@ jobs:
 
       - name: Build Unsigned APK (Release)
         run: |
-          cordova build android --release --no-telemetry
-          
+          cordova build android --release --no-telemetry --packageType=apk
+
+      - name: List APK outputs
+        run: ls -la platforms/android/app/build/outputs/apk/release || true
+
       - name: Upload unsigned APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: MyWeatherApp-unsigned-apk
-          path: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
+          path: platforms/android/app/build/outputs/apk/release/*.apk
