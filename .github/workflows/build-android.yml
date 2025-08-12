@@ -10,38 +10,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. جلب الكود من المستودع
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2. إعداد Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
 
+      # 3. إعداد Java 17 (Temurin)
       - name: Setup Java 17 (Temurin)
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
+      # 4. تثبيت الحزم المساعدة
       - name: Install helper packages
         run: sudo apt-get update && sudo apt-get install -y wget unzip
 
+      # 5. تثبيت أدوات الأندرويد و SDK
       - name: Install Android command-line tools & SDK packages
         run: |
-          # install commandline tools into $HOME/android-sdk
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O /tmp/cmdline-tools.zip
           unzip -q /tmp/cmdline-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools
-          # normalize path to 'latest'
           mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest || true
           export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin
-          # accept licenses and install basic packages (adjust API / build-tools if needed)
           yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-35" "build-tools;35.0.0" "platforms;android-33" "build-tools;33.0.2"
+          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "platforms;android-33" \
+            "build-tools;33.0.2"
 
+      # 6. إضافة SDK إلى PATH
       - name: Expose Android SDK to PATH and env
         run: |
           echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
@@ -49,32 +57,36 @@ jobs:
           echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
           echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
 
+      # 7. تثبيت Cordova واعتماديات المشروع
       - name: Install project dependencies & Cordova
         run: |
-          # install project deps (safe if package.json exists)
           if [ -f package-lock.json ] || [ -f package.json ]; then
             npm install
           fi
           npm install -g cordova
 
+      # 8. إعداد منصة Android
       - name: Prepare Cordova Android platform
         run: |
           cordova telemetry off || true
-          # remove old android platform (if present) and add fresh one
           cordova platform rm android || true
           cordova platform add android@latest --save
 
-      - name: Build Android (release)
+      # 9. بناء APK و AAB معًا
+      - name: Build Android (APK & AAB)
         run: |
-          cordova build android --release --no-telemetry
+          cordova build android --release --no-telemetry --packageType=apk
+          cordova build android --release --no-telemetry --packageType=bundle
 
-      - name: Show APK path (debug)
-        run: |
-          echo "Listing possible APK output(s):"
-          ls -la platforms/android/app/build/outputs/apk/release || true
+      # 10. عرض جميع الملفات المخرجة (للتأكد)
+      - name: Check all outputs
+        run: find platforms/android/app/build/outputs -type f
 
-      - name: Upload APK artifact
+      # 11. رفع APK و AAB كـ artifacts
+      - name: Upload APK & AAB artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: MyWeatherApp-apk
-          path: platforms/android/app/build/outputs/apk/release/*.apk
+          name: MyWeatherApp-builds
+          path: |
+            platforms/android/app/build/outputs/apk/release/*.apk
+            platforms/android/app/build/outputs/bundle/release/*.aab
