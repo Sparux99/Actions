@@ -43,7 +43,7 @@ jobs:
           cordova build android --release
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: MyWeatherApp
           path: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
