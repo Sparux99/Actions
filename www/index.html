@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ar">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https://ssl.gstatic.com https://api.open-meteo.com 'unsafe-eval'; 
+                     style-src 'self' 'unsafe-inline'; 
+                     media-src *; 
+                     img-src 'self' data: content:;">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
+    <link rel="stylesheet" href="css/style.css">
+    <title>Weather App</title>
+</head>
+
+<body>
+
+    <header>
+        <nav class="main-nav">
+            <h1>تطبيق الطقس</h1>
+            <button id="menuBtn" class="menu-btn">☰</button>
+        </nav>
+    </header>
+
+    <aside id="sidebar" class="sidebar">
+        <button id="closeSidebar" class="close-btn">×</button>
+        <ul>
+            <li><button id="showJsonBtn">عرض بيانات API (JSON)</button></li>
+            <li><button id="themeBtn">تغيير اللون</button></li>
+            <li><button id="aboutBtn">عن المطور</button></li>
+            <li><button id="termsBtn">شروط الاستخدام</button></li>
+        </ul>
+    </aside>
+
+    <select id="citySelect">
+        <option value="">اختر مدينة</option>
+    </select>
+
+
+    <div id="loading-screen">
+        <div class="loader"></div>
+        <p>جاري تحميل البيانات...</p>
+    </div>
+
+    <div id="main-content" style="display:none;">
+        <section class="current-weather">
+            <h1 class="location" id="current-location">المدينة</h1>
+            <div class="current-time" id="current-time">---</div>
+            <div class="description" id="current-weather">---</div>
+            <div class="top_content"><img src="assets/png/day/clear_sky.png" alt="Weather Icon" class="weather-icon">
+                <div class="temperature" id="current-temp">--°C</div>
+            </div>
+            <div class="sun-times">
+                <div class="sun_style">
+                    <img src="assets/png/aviable/sunrise.png" width="50" height="50"  alt="شروق">
+                    <span id="sunrise"></span>
+                </div>
+                <div class="sun_style">
+                    <img src="assets/png/aviable/sunset.png" width="50" height="50" alt="غروب">
+                    <span id="sunset"></span>
+                </div>
+            </div>
+            <div class="current-details">
+                <div>💨 <span id="current-wind">-- كم/س</span></div>
+                <div>💧 <span id="current-humidity">--%</span></div>
+                <div>📊 <span id="current-pressure">-- hPa</span></div>
+            </div>
+        </section>
+
+        <section class="forecast">
+            <h2>توقعات الأسبوع</h2>
+            <div class="forecast-container" id="forecast">
+            </div>
+        </section>
+        <div id="last-update" class="last-update"></div>
+    </div>
+
+    <script src="cordova.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/index.js"></script>
+    <script>
+        document.getElementById("last-update").textContent =
+            "آخر تحديث: " + new Date().toLocaleTimeString("ar-MA", { hour: "2-digit", minute: "2-digit" });
+    </script>
+</body>
+
+</html>

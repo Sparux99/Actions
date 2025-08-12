@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.weather2025.ma" version="2.2.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>Weather 2025</name>
+    <description>Get the latest weather updates</description>
+    <author email="sparux19@gmail.com" href="https://www.facebook.com/">Amine</author>
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <platform name="android">
+        <icon src="resources/android/icon/drawable-ldpi-icon.png" density="ldpi" />
+        <icon src="resources/android/icon/drawable-mdpi-icon.png" density="mdpi" />
+        <icon src="resources/android/icon/drawable-hdpi-icon.png" density="hdpi" />
+        <icon src="resources/android/icon/drawable-xhdpi-icon.png" density="xhdpi" />
+        <icon src="resources/android/icon/drawable-xxhdpi-icon.png" density="xxhdpi" />
+        <icon src="resources/android/icon/drawable-xxxhdpi-icon.png" density="xxxhdpi" />
+    </platform>
+    <preference name="AndroidWindowSplashScreenAnimatedIcon" value="resources/icon.png" />
+
+</widget>
