@@ -1,4 +1,4 @@
-name: Build Cordova Android and Convert AAB to Signed APK
+name: Build Cordova Android Unsigned APK
 
 on:
   push:
@@ -40,9 +40,7 @@ jobs:
           $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
             "platform-tools" \
             "platforms;android-35" \
-            "build-tools;35.0.0" \
-            "platforms;android-33" \
-            "build-tools;33.0.2"
+            "build-tools;35.0.0"
 
       - name: Expose Android SDK to PATH and env
         run: |
@@ -64,34 +62,12 @@ jobs:
           cordova platform rm android || true
           cordova platform add android@latest --save
 
-      - name: Build Android AAB (release)
+      - name: Build Unsigned APK (Release)
         run: |
-          cordova build android --release --no-telemetry --packageType=bundle
-
-      - name: Decode and save keystore from Secrets
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
-        shell: bash
-
-      - name: Download bundletool
-        run: |
-          wget -q https://github.com/google/bundletool/releases/download/1.18.1/bundletool-all-1.18.1.jar -O bundletool.jar
-
-      - name: Convert AAB to Signed APK
-        run: |
-          java -jar bundletool.jar build-apks \
-            --bundle=platforms/android/app/build/outputs/bundle/release/app-release.aab \
-            --output=app-release.apks \
-            --mode=universal \
-            --ks=release.keystore \
-            --ks-key-alias=${{ secrets.KEY_ALIAS }} \
-            --ks-pass=pass:${{ secrets.STORE_PASSWORD }} \
-            --key-pass=pass:${{ secrets.KEY_PASSWORD }}
-
-          unzip -p app-release.apks '*.apk' > universal-signed.apk
-
-      - name: Upload signed APK artifact
+          cordova build android --release --no-telemetry
+          
+      - name: Upload unsigned APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MyWeatherApp-signed-apk
-          path: universal-signed.apk
+          name: MyWeatherApp-unsigned-apk
+          path: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
