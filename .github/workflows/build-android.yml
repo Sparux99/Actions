@@ -1,4 +1,4 @@
-name: Build Cordova Android Unsigned APK
+name: Build Cordova Android (AAB or APK)
 
 on:
   push:
@@ -62,15 +62,35 @@ jobs:
           cordova platform rm android || true
           cordova platform add android@latest --save
 
-      - name: Build Unsigned APK (Release)
+      - name: Build Android App Bundle (AAB)
         run: |
-          cordova build android --release --no-telemetry --packageType=apk
+          cordova build android --release --no-telemetry --verbose
 
-      - name: List APK outputs
-        run: ls -la platforms/android/app/build/outputs/apk/release || true
+      - name: List output files
+        run: |
+          echo "📦 AAB files:"
+          ls -la platforms/android/app/build/outputs/bundle/release || true
+          echo "📦 APK files:"
+          ls -la platforms/android/app/build/outputs/apk/release || true
 
-      - name: Upload unsigned APK artifact
+      - name: Check if AAB file exists
+        run: |
+          FILE=platforms/android/app/build/outputs/bundle/release/*.aab
+          if ls $FILE 1> /dev/null 2>&1; then
+            echo "✅ AAB file found."
+          else
+            echo "❌ AAB file not found!"
+            exit 1
+          fi
+
+      - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MyWeatherApp-unsigned-apk
-          path: platforms/android/app/build/outputs/apk/release/*.apk
+          name: MyWeatherApp-aab
+          path: platforms/android/app/build/outputs/bundle/release/**/*.aab
+
+      - name: Upload APK artifact (optional)
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyWeatherApp-apk
+          path: platforms/android/app/build/outputs/apk/release/**/*.apk
