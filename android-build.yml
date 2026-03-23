@@ -3,7 +3,7 @@ name: Build Android APK
 on:
   push:
     branches: [ "main", "master" ]
-  workflow_dispatch: # زر لتشغيل البناء يدوياً
+  workflow_dispatch:
 
 jobs:
   build:
@@ -22,7 +22,12 @@ jobs:
       uses: actions/setup-java@v3
       with:
         distribution: 'temurin'
-        java-version: '11'
+        java-version: '17' # تحديث الجافا لـ 17 لتتوافق مع أحدث إصدارات أندرويد
+
+    - name: تنزيل Android Build Tools 36
+      run: |
+        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "build-tools;36.0.0"
+        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-34"
 
     - name: تثبيت Cordova
       run: npm install -g cordova
