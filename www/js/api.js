@@ -11,7 +11,25 @@ const cities = [
     { name: "فاس", lat: 34.0331, lon: -5.0003 },
     { name: "طنجة", lat: 35.7595, lon: -5.83395 },
     { name: "أكادير", lat: 30.4278, lon: -9.5981 },
-    { name: "وجدة", lat: 34.6814, lon: -1.9086 }
+    { name: "وجدة", lat: 34.6814, lon: -1.9086 },
+    { name: "العيون", lat: 27.1536, lon: -13.2033 },
+    { name: "الصويرة", lat: 31.5085, lon: -9.7595 },
+    { name: "تطوان", lat: 35.5785, lon: -5.3684 },
+    { name: "الناظور", lat: 35.1714, lon: -2.933 },
+    { name: "خريبكة", lat: 32.8806, lon: -6.9063 },
+    { name: "سطات", lat: 32.5705, lon: -7.6092 },
+    { name: "آسفي", lat: 32.2994, lon: -9.2372 },
+    { name: "العرائش", lat: 35.1932, lon: -6.1557 },
+    { name: "الجديدة", lat: 33.254, lon: -8.506 },
+    { name: "القنيطرة", lat: 34.261, lon: -6.5802 },
+    { name: "بركان", lat: 34.92, lon: -2.32 },
+    { name: "تازة", lat: 34.21, lon: -4.01 },
+    { name: "مكناس", lat: 33.895, lon: -5.5547 },
+    { name: "آسني", lat: 31.2728, lon: -7.872 },
+    { name: "تزنيت", lat: 29.696, lon: -9.732 },
+    { name: "زاكورة", lat: 30.333, lon: -5.833 },
+    { name: "السمارة", lat: 26.7384, lon: -11.6719 },
+    { name: "بوجدور", lat: 26.1333, lon: -14.5 }
 ];
 
 // عناصر الواجهة الطقس
@@ -46,7 +64,7 @@ async function fetchAllData(LAT, LON, cityName) {
     try {
         // 1. الطقس الشامل
         const weatherUrl = `${API_URL}?latitude=${LAT}&longitude=${LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&hourly=temperature_2m,precipitation_probability,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max&timezone=auto`;
-        
+
         // 2. جودة الهواء
         const airUrl = `${AIR_API_URL}?latitude=${LAT}&longitude=${LON}&current=european_aqi&timezone=auto`;
 
@@ -67,6 +85,11 @@ async function fetchAllData(LAT, LON, cityName) {
         updateHourlyForecast(weatherData);
         updateDailyForecast(weatherData);
 
+        // فحص التحذيرات للطقس
+        if (typeof checkWeatherAlerts === "function") {
+            checkWeatherAlerts(weatherData.daily);
+        }
+
         mainContent.style.display = "block";
     } catch (error) {
         alert("تأكد من اتصالك بالإنترنت وحاول مجدداً.");
@@ -78,17 +101,17 @@ async function fetchAllData(LAT, LON, cityName) {
 function updateCurrentWeather(data, airData, cityName) {
     const current = data.current;
     const daily = data.daily;
-    
+
     currentLocation.textContent = cityName;
     currentTemp.textContent = `${Math.round(current.temperature_2m)}°`;
     currentWeather.textContent = weatherCodeToText(current.weather_code);
     currentWind.textContent = `${Math.round(current.wind_speed_10m)}`;
     currentHumidity.textContent = `${Math.round(current.relative_humidity_2m)}`;
-    
+
     // UV + AQI
     currentUv.textContent = (daily && daily.uv_index_max) ? Math.round(daily.uv_index_max[0]) : "--";
     currentAqi.textContent = (airData && airData.current && airData.current.european_aqi) ? airData.current.european_aqi : "--";
-    
+
     // الوقت الحالي والشروق/الغروب
     currentTime.textContent = formatDateFull(new Date());
     document.getElementById("last-update").textContent = "آخر تحديث: " + formatTime(new Date().toISOString());
@@ -154,7 +177,7 @@ function updateDailyForecast(data) {
         const div = document.createElement("div");
         div.className = "daily-row";
         const iconPath = typeof getWeatherIcon === "function" ? getWeatherIcon(daily.weather_code[i], 1) : 'assets/png/cloudy.png';
-        
+
         div.innerHTML = `
             <div class="d-day">${getDayName(daily.time[i])}</div>
             <img class="d-icon" src="${iconPath}">
@@ -172,12 +195,12 @@ function fetchUsingGPS() {
     if (navigator.geolocation) {
         loadingScreen.style.display = "flex";
         loadingText.textContent = "جاري تحديد موقعك الجغرافي...";
-        
+
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
-                citySelect.value = "gps,gps"; 
+                citySelect.value = "gps,gps";
                 loadingText.textContent = "جاري جلب البيانات...";
                 fetchAllData(lat, lon, "موقعي الدقيق 📍");
             },
@@ -234,14 +257,14 @@ function weatherCodeToText(code) {
 function setDynamicBackground(weatherCode, isDay) {
     const body = document.body;
     let gradient = "";
-    
+
     // الكود 0 و 1 للصافي والغالب صافي
     if (weatherCode <= 1) {
         gradient = isDay
             ? "linear-gradient(135deg, #1fc2f1 0%, #2980b9 100%)" // سماء زرقاء مشرقة
             : "linear-gradient(135deg, #141e30 0%, #243b55 100%)"; // ليل مظلم
     } else if (weatherCode === 2 || weatherCode === 3 || weatherCode === 45) {
-        gradient = isDay 
+        gradient = isDay
             ? "linear-gradient(135deg, #bdc3c7 0%, #2c3e50 100%)" // غيوم
             : "linear-gradient(135deg, #2c3e50 0%, #000000 100%)";
     } else if (weatherCode >= 61 && weatherCode <= 65 || weatherCode === 80) {
@@ -268,4 +291,62 @@ function formatDateFull(date) {
 function getDayName(isoString) {
     const date = new Date(isoString);
     return date.toLocaleDateString("ar-MA", { weekday: "long" });
+}
+
+function checkWeatherAlerts(daily) {
+    if (!daily || !daily.temperature_2m_max || !daily.weather_code) return;
+    
+    // 1. إشعار عندما يتم التحقق من الطقس
+    if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
+        cordova.plugins.notification.local.schedule({
+            id: 101, // ID ثابت لكي يقوم بتحديث الإشعار ولا تتراكم الإشعارات
+            title: "تحديث الطقس",
+            text: "تم جلب أحدث بيانات الطقس لموقعك بنجاح ✅",
+            foreground: true
+        });
+    }
+
+    // 2. مراقبة الطاليوم وغداً لتخصيص إنذارات مسبقة
+    for(let i=0; i<2; i++) {
+        let temp = Math.round(daily.temperature_2m_max[i]);
+        let wCode = daily.weather_code[i];
+        let alertMsg = null;
+
+        // درجات الحرارة القاسية
+        if(temp >= 38) {
+            alertMsg = `موجة حر شديدة متوقعة (${temp}°C). يرجى البقاء في الظل والمحافظة على رطوبة جسمك! ☀️`;
+        } else if (temp <= 5) {
+            alertMsg = `موجة برد شديدة متوقعة (${temp}°C). ارتدِ ملابس دافئة جداً! ❄️`;
+        }
+        
+        // الأمطار الغزيرة والعواصف (أكواد 65، 80، 95)
+        if (!alertMsg && (wCode === 65 || wCode === 80 || wCode === 95)) {
+            alertMsg = `تحذير! أمطار غزيرة أو عواصف متوقعة. خذ حذرك! ⛈️`;
+        } else if (!alertMsg && (wCode === 61 || wCode === 63 || wCode === 51)) {
+            alertMsg = `توقعات بهطول أمطار. لا تنسَ المظلة! ☔`;
+        }
+
+        if (alertMsg) {
+            if (i === 0) {
+                // إنذار لليوم (فوري كإشعار منبثق داخل التطبيق وفي النظام)
+                if (typeof showAppNotification === "function") {
+                    showAppNotification("تنبيه طقس اليوم ⚠️", alertMsg); 
+                }
+            } else if (i === 1) {
+                // برمجة إشعار مستقبلي (للغد صباحاً) ليعمل كأنه "في الخلفية"
+                if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
+                    let tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    tomorrow.setHours(8, 0, 0, 0); // غداً الساعة 08:00 صباحاً
+                    
+                    cordova.plugins.notification.local.schedule({
+                        id: 300, 
+                        title: "تنبيه طقس الغد ⚠️",
+                        text: alertMsg,
+                        trigger: { at: tomorrow }
+                    });
+                }
+            }
+        }
+    }
 }

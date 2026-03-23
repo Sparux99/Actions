@@ -78,7 +78,7 @@ function onDeviceReady() {
     function scheduleDailyNotification() {
         cordova.plugins.notification.local.schedule({
             id: 200,
-            title: "Weather 2025",
+            title: "Weather 2026",
             text: "اطلع على طقس اليوم! ✅",
             trigger: { every: { hour: 10, minute: 0 } },
             foreground: true,

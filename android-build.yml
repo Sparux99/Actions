@@ -1,0 +1,40 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # زر لتشغيل البناء يدوياً
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: تحميل كود التطبيق
+      uses: actions/checkout@v3
+
+    - name: تهيئة Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: تهيئة Java JDK
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '11'
+
+    - name: تثبيت Cordova
+      run: npm install -g cordova
+
+    - name: إضافة منصة الأندرويد
+      run: cordova platform add android
+
+    - name: بناء تطبيق الـ APK
+      run: cordova build android
+
+    - name: رفع ملف الـ APK النهائي للتحميل
+      uses: actions/upload-artifact@v3
+      with:
+        name: WeatherApp-APK
+        path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
