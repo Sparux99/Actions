@@ -1,90 +1,132 @@
 <!DOCTYPE html>
-<html lang="ar">
-
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https://ssl.gstatic.com https://api.open-meteo.com 'unsafe-eval'; 
-                     style-src 'self' 'unsafe-inline'; 
-                     media-src *; 
-                     img-src 'self' data: content:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https://ssl.gstatic.com https://*.open-meteo.com 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; media-src *; img-src 'self' data: content:;">
     <meta name="format-detection" content="telephone=no">
     <meta name="msapplication-tap-highlight" content="no">
     <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
     <meta name="color-scheme" content="light dark">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
-    <title>Weather App</title>
+    <title>تطبيق الطقس المطور</title>
 </head>
 
 <body>
+    <!-- خلفية زجاجية متحركة -->
+    <div class="glass-bg"></div>
 
     <header>
         <nav class="main-nav">
-            <h1>تطبيق الطقس</h1>
-            <button id="menuBtn" class="menu-btn">☰</button>
+            <button id="menuBtn" class="icon-btn">☰</button>
+            <div class="search-container">
+                <select id="citySelect">
+                    <option value="" disabled>اختر مدينة...</option>
+                </select>
+            </div>
+            <button id="locationBtn" class="icon-btn">📍</button>
         </nav>
     </header>
 
     <aside id="sidebar" class="sidebar">
         <button id="closeSidebar" class="close-btn">×</button>
+        <div class="sidebar-header">
+            <h2>إعدادات التطبيق</h2>
+        </div>
         <ul>
-            <li><button id="showJsonBtn">عرض بيانات API (JSON)</button></li>
-            <li><button id="themeBtn">تغيير اللون</button></li>
+            <li><button id="showJsonBtn">عرض بيانات API</button></li>
+            <li><button id="themeBtn">الوضع الليلي</button></li>
             <li><button id="aboutBtn">عن المطور</button></li>
             <li><button id="termsBtn">شروط الاستخدام</button></li>
         </ul>
     </aside>
 
-    <select id="citySelect">
-        <option value="">اختر مدينة</option>
-    </select>
-
-
     <div id="loading-screen">
-        <div class="loader"></div>
-        <p>جاري تحميل البيانات...</p>
+        <div class="loader-glass">
+            <div class="spinner"></div>
+            <p id="loading-text">جاري تحديد الموقع و جلب البيانات...</p>
+        </div>
     </div>
 
-    <div id="main-content" style="display:none;">
-        <section class="current-weather">
-            <h1 class="location" id="current-location">المدينة</h1>
-            <div class="current-time" id="current-time">---</div>
-            <div class="description" id="current-weather">---</div>
-            <div class="top_content"><img src="assets/png/day/clear_sky.png" alt="Weather Icon" class="weather-icon">
-                <div class="temperature" id="current-temp">--°C</div>
-            </div>
-            <div class="sun-times">
-                <div class="sun_style">
-                    <img src="assets/png/aviable/sunrise.png" width="50" height="50"  alt="شروق">
-                    <span id="sunrise"></span>
-                </div>
-                <div class="sun_style">
-                    <img src="assets/png/aviable/sunset.png" width="50" height="50" alt="غروب">
-                    <span id="sunset"></span>
+    <div id="main-content" style="display:none;" class="fade-in">
+        <!-- الحالة الحالية الرئيسية -->
+        <section class="current-weather glass-card">
+            <h1 class="location" id="current-location">--</h1>
+            <p class="current-time" id="current-time">--:--</p>
+            
+            <div class="main-temp-wrapper">
+                <img src="assets/png/day/clear_sky.png" alt="Weather Icon" class="weather-icon anim-float" id="main-weather-icon">
+                <div class="temp-col">
+                    <div class="temperature" id="current-temp">--°</div>
+                    <div class="description" id="current-weather">--</div>
                 </div>
             </div>
-            <div class="current-details">
-                <div>💨 <span id="current-wind">-- كم/س</span></div>
-                <div>💧 <span id="current-humidity">--%</span></div>
-                <div>📊 <span id="current-pressure">-- hPa</span></div>
+
+            <!-- مؤشرات سريعة -->
+            <div class="metrics-row">
+                <div class="metric">
+                    <span class="m-icon">💨</span>
+                    <span class="m-val" id="current-wind">--</span>
+                    <span class="m-lbl">كم/س</span>
+                </div>
+                <div class="metric">
+                    <span class="m-icon">💧</span>
+                    <span class="m-val" id="current-humidity">--</span>
+                    <span class="m-lbl">%</span>
+                </div>
+                <div class="metric">
+                    <span class="m-icon">☀️</span>
+                    <span class="m-val" id="current-uv">--</span>
+                    <span class="m-lbl">UV</span>
+                </div>
+                <div class="metric">
+                    <span class="m-icon">🍃</span>
+                    <span class="m-val" id="current-aqi">--</span>
+                    <span class="m-lbl">AQI</span>
+                </div>
+            </div>
+            
+            <div class="sun-times-row">
+                <div class="sun-time">
+                    <img src="assets/png/aviable/sunrise.png" alt="شروق">
+                    <span id="sunrise">--:--</span>
+                </div>
+                <div class="sun-time">
+                    <img src="assets/png/aviable/sunset.png" alt="غروب">
+                    <span id="sunset">--:--</span>
+                </div>
             </div>
         </section>
 
-        <section class="forecast">
-            <h2>توقعات الأسبوع</h2>
-            <div class="forecast-container" id="forecast">
+        <!-- توقعات الساعات القادمة -->
+        <section class="hourly-forecast glass-card">
+            <div class="section-header">
+                <h2>الساعات القادمة</h2>
+            </div>
+            <div class="hourly-container scroll-snap" id="hourly-container">
+                <!-- يتم تعبئتها بواسطة JS -->
             </div>
         </section>
-        <div id="last-update" class="last-update"></div>
+
+        <!-- توقعات الأيام القادمة -->
+        <section class="daily-forecast glass-card">
+            <div class="section-header">
+                <h2>الأيام القادمة</h2>
+            </div>
+            <div class="forecast-container scroll-snap" id="forecast">
+                <!-- يتم تعبئتها بواسطة JS -->
+            </div>
+        </section>
+
+        <div id="last-update" class="last-update">آخر تحديث: الآن</div>
     </div>
 
+    <!-- 스كريبتات -->
     <script src="cordova.js"></script>
-    <script src="js/api.js"></script>
     <script src="js/ui.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/index.js"></script>
-    <script>
-        document.getElementById("last-update").textContent =
-            "آخر تحديث: " + new Date().toLocaleTimeString("ar-MA", { hour: "2-digit", minute: "2-digit" });
-    </script>
 </body>
-
 </html>

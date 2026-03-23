@@ -16,10 +16,13 @@ function getWeatherIcon(weatherCode, isDay) {
         95: 'thunderstorm'
     };
 
-    let iconName = iconMap[weatherCode] || "cloudy";
+    let iconName = iconMap[weatherCode] || "partly_cloudy";
     let timeFolder = isDay ? "day" : "night";
-    // إذا كان الأيقونة عامة وليست خاصة بالنهار أو الليل
-    if (["rain", "snow", "thunderstorm", "fog", "cloudy", "pcloudy"].includes(iconName)) {
+
+    // الأيقونات التي ليس لها نسخة للنهار وأخرى لليل
+    const genericIcons = ["light_rain", "moderate_rain", "heavy_rain", "light_snow", "thunderstorm", "fog", "freezing_fog", "light_drizzle", "light_showers"];
+    
+    if (genericIcons.includes(iconName)) {
         return `assets/png/${iconName}.png`;
     } else {
         return `assets/png/${timeFolder}/${iconName}.png`;
